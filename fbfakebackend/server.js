@@ -8,7 +8,8 @@ import dotenv from "dotenv";
 //App Config
 const app = express();
 const port = process.env.PORT || 9000;
-const connection_url = "mongodb://localhost:27017";
+const connection_url = "mongodb://localhost:27017/mydatabase";
+
 dotenv.config();
 
 const pusher = new Pusher({
