@@ -5,7 +5,7 @@ import Cors from "cors";
 import Pusher from "pusher";
 import dotenv from "dotenv";
 
-//App Config
+// App Config
 const app = express();
 const port = process.env.PORT || 9000;
 const connection_url = "mongodb://localhost:27017/mydatabase";
@@ -19,19 +19,36 @@ const pusher = new Pusher({
   cluster: "ap1",
   useTLS: true,
 });
-//Middleware
+
+// Middleware
 app.use(express.json());
 app.use(Cors());
 
-//DB Config
+// DB Config
 mongoose.connect(connection_url, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
+
 mongoose.connection.once("open", () => {
   console.log("DB Connected");
+
+  // Instead of change stream, use watch for changes
+  const postWatch = Posts.watch();
+  postWatch.on("change", (change) => {
+    console.log(change);
+    if (change.operationType === "insert") {
+      console.log("Trigerring Pusher");
+      pusher.trigger("posts", "inserted", {
+        change: change,
+      });
+    } else {
+      console.log("Error trigerring Pusher");
+    }
+  });
 });
-//API Endpoints
+
+// API Endpoints
 app.get("/", (req, res) => res.status(200).send("Hello TheWebDev"));
 app.post("/upload", async (req, res) => {
   try {
@@ -52,5 +69,5 @@ app.get("/sync", async (req, res) => {
   }
 });
 
-//Listener
+// Listener
 app.listen(port, () => console.log(`Listening on localhost: ${port}`));
